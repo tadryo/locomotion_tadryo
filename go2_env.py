@@ -54,18 +54,18 @@ class Go2Env:
         # add plain
         self.scene.add_entity(gs.morphs.URDF(file="urdf/plane/plane.urdf", fixed=True))
 
+        """
         # add obstacles
         self.num_obstacles = 10
         self.obstacles = []
         self.obstacle_spacing = 2.0
+        self.obstacle_positions = []
+        
         
         # 障害物の配置範囲を定義
         self.obstacle_spawn_config = {
             "x_range": (2.0, 8.0),    # ロボットの前方2-8m
             "y_range": (-2.0, 2.0),   # 左右2m以内
-            "box": {"height": 0.5},
-            "sphere": {"height": 0.4},
-            "cylinder": {"height": 0.4}
         }
         
         # 異なる形状の障害物を追加
@@ -83,9 +83,21 @@ class Go2Env:
             else:
                 # Cylinder型の障害物
                 obstacle = self.scene.add_entity(
-                    gs.morphs.Cylinder(radius=0.15, height=0.4, fixed=True)
+                    gs.morphs.Cylinder(radius=0.15, height=0.5, fixed=True)
                 )
+            # 初期位置をランダムに決定
+            pos = torch.tensor(
+                [
+                    gs_rand_float(*self.obstacle_spawn_config["x_range"], (1,), gs.device)[0],
+                    gs_rand_float(*self.obstacle_spawn_config["y_range"], (1,), gs.device)[0],
+                    0.25,
+                ],
+                device=gs.device,
+            )
+            # 位置を保存
+            self.obstacle_positions.append(pos)
             self.obstacles.append(obstacle)
+        """
 
         # add robot
         self.base_init_pos = torch.tensor(self.env_cfg["base_init_pos"], device=gs.device)
@@ -233,27 +245,11 @@ class Go2Env:
         if len(envs_idx) == 0:
             return
 
-        # reset obstacles position randomly
+        """
         for env_idx in envs_idx:
-            for i, obstacle in enumerate(self.obstacles):
-                # 障害物タイプに応じた高さを設定
-                if i % 3 == 0:  # Box
-                    height = self.obstacle_spawn_config["box"]["height"]
-                elif i % 3 == 1:  # Sphere
-                    height = self.obstacle_spawn_config["sphere"]["height"]
-                else:  # Cylinder
-                    height = self.obstacle_spawn_config["cylinder"]["height"]
-                    
-                # ロボットの前方にランダムに配置
-                pos = torch.tensor(
-                    [
-                        gs_rand_float(*self.obstacle_spawn_config["x_range"], (1,), gs.device)[0],
-                        gs_rand_float(*self.obstacle_spawn_config["y_range"], (1,), gs.device)[0],
-                        height / 2,
-                    ],
-                    device=gs.device,
-                )
+            for obstacle, pos in zip(self.obstacles, self.obstacle_positions):
                 obstacle.set_pos(pos.cpu().numpy(), envs_idx=[env_idx])
+        """
 
         # reset dofs
         self.dof_pos[envs_idx] = self.default_dof_pos
@@ -321,3 +317,12 @@ class Go2Env:
     def _reward_base_height(self):
         # Penalize base height away from target
         return torch.square(self.base_pos[:, 2] - self.reward_cfg["base_height_target"])
+    
+    def update_velocity_range(self, current_iteration, max_iteration):
+        # カリキュラム学習で速度範囲を段階的に拡大
+        # 最小値は0.0、最大値は0.5〜2.0m/sまで線形に増加させる例
+        max_lin_vel = 0.5 + 1.5 * min(current_iteration / max_iteration, 1.0)
+        # y軸・角速度は0固定（必要なら同様に変更可）
+        self.command_cfg['lin_vel_x_range'] = [max_lin_vel, max_lin_vel]
+        self.command_cfg['lin_vel_y_range'] = [0.0, 0.0]
+        self.command_cfg['ang_vel_range'] = [0.0, 0.0]
