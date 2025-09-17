@@ -147,7 +147,7 @@ def get_cfgs():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-e", "--exp_name", type=str, default="go2-run")
+    parser.add_argument("-e", "--exp_name", type=str, default="go2-lidar")
     parser.add_argument("-B", "--num_envs", type=int, default=4096)
     parser.add_argument("--max_iterations", type=int, default=101)
     args = parser.parse_args()
@@ -173,26 +173,7 @@ def main():
 
     runner = OnPolicyRunner(env, train_cfg, log_dir, device=gs.device)
 
-    # runner.learn(num_learning_iterations=args.max_iterations, init_at_random_ep_len=True)
-
-    six_iter = args.max_iterations // 6
-    env.command_cfg['lin_vel_x_range'] = [0.5, 0.5]
-    runner.learn(num_learning_iterations=six_iter, init_at_random_ep_len=True)
-    print("Changing target velocity to 1.0 m/s")
-    env.command_cfg['lin_vel_x_range'] = [1.0, 1.0]
-    runner.learn(num_learning_iterations=six_iter, init_at_random_ep_len=True)
-    print("Changing target velocity to 1.5 m/s")
-    env.command_cfg['lin_vel_x_range'] = [1.5, 1.5]
-    runner.learn(num_learning_iterations=six_iter, init_at_random_ep_len=True)
-    print("Changing target velocity to 2.0 m/s")
-    env.command_cfg['lin_vel_x_range'] = [2.0, 2.0]
-    runner.learn(num_learning_iterations=six_iter, init_at_random_ep_len=True)
-    print("Changing target velocity to 2.5 m/s")
-    env.command_cfg['lin_vel_x_range'] = [2.5, 2.5]
-    runner.learn(num_learning_iterations=six_iter, init_at_random_ep_len=True)
-    print("Changing target velocity to 3.0 m/s")
-    env.command_cfg['lin_vel_x_range'] = [3.0, 3.0]
-    runner.learn(num_learning_iterations=six_iter + (args.max_iterations % 6), init_at_random_ep_len=True)
+    runner.learn(num_learning_iterations=args.max_iterations, init_at_random_ep_len=True)
 
 
 if __name__ == "__main__":
