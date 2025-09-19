@@ -133,7 +133,7 @@ def get_cfgs():
             "base_height": -50.0,
             "action_rate": -0.005,
             "similar_to_default": -0.1,
-            # "obstacle_avoidance": -2.0,
+            "obstacle_avoidance": -2.0,
         },
     }
     command_cfg = {

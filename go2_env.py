@@ -127,7 +127,7 @@ class Go2Env:
                 robot=self.robot,
                 obstacle_entities=self.obstacles, # 環境内で定義した障害物リストを渡す
                 num_rays=180,
-                ray_length=1.0,
+                ray_length=10.0,
                 ray_start_angle=-math.pi, # 360度
                 ray_end_angle=math.pi,
                 visualize=True
@@ -271,6 +271,7 @@ class Go2Env:
         if len(envs_idx) == 0:
             return
 
+        # reset obstacles
         for env_idx in envs_idx:
             for obstacle, pos in zip(self.obstacles, self.obstacle_positions):
                 obstacle.set_pos(pos.cpu().numpy(), envs_idx=[env_idx])
@@ -342,7 +343,6 @@ class Go2Env:
         # Penalize base height away from target
         return torch.square(self.base_pos[:, 2] - self.reward_cfg["base_height_target"])
 
-    """
     def _reward_obstacle_avoidance(self):
         
         # LIDARで検知した前方の障害物との距離に基づいてペナルティを計算する。
@@ -365,7 +365,6 @@ class Go2Env:
             penalty = torch.clamp(1.0 - min_front_distance / 0.3, min=0.0)
 
         return penalty
-    """
 
     def update_velocity_range(self, current_iteration, max_iteration):
         # カリキュラム学習で速度範囲を段階的に拡大
