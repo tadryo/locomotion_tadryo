@@ -121,8 +121,7 @@ class Go2Env:
 
         # LIDARセンサーをインスタンス化
         # visualizeフラグをshow_viewerと連動させる
-        if show_viewer:
-            self.lidar = GenesisLidar(
+        self.lidar = GenesisLidar(
                 scene=self.scene,
                 robot=self.robot,
                 obstacle_entities=self.obstacles, # 環境内で定義した障害物リストを渡す
@@ -131,9 +130,7 @@ class Go2Env:
                 ray_start_angle=-math.pi, # 360度
                 ray_end_angle=math.pi,
                 visualize=True
-            )
-        else:
-            self.lidar = None
+            ) if self.env_cfg.get("use_lidar", True) else None # LIDARを使うかどうかのフラグ
 
         # names to indices
         self.motors_dof_idx = [self.robot.get_joint(name).dof_start for name in self.env_cfg["joint_names"]]
