@@ -16,7 +16,7 @@ class GenesisLidar:
         robot: gs.engine.entities.rigid_entity.rigid_entity.RigidEntity,
         obstacle_entities: list,
         num_rays: int = 180,
-        ray_length: float = 5.0,
+        ray_length: float = 1.0,
         ray_start_angle: float = -math.pi,
         ray_end_angle: float = math.pi,
         height_offset: float = 0.1,

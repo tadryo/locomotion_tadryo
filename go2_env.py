@@ -188,8 +188,9 @@ class Go2Env:
 
     def step(self, actions):
         # LIDARがインスタンス化されていればスキャンを実行
+        self.lidar_distances = None
         if self.lidar is not None:
-            lidar_distances = self.lidar.scan()
+            self.lidar_distances = self.lidar.scan()
 
         self.actions = torch.clip(actions, -self.env_cfg["clip_actions"], self.env_cfg["clip_actions"])
         exec_actions = self.last_actions if self.simulate_action_latency else self.actions
@@ -340,7 +341,32 @@ class Go2Env:
     def _reward_base_height(self):
         # Penalize base height away from target
         return torch.square(self.base_pos[:, 2] - self.reward_cfg["base_height_target"])
-    
+
+    """
+    def _reward_obstacle_avoidance(self):
+        
+        # LIDARで検知した前方の障害物との距離に基づいてペナルティを計算する。
+        
+        penalty = torch.zeros(self.num_envs, device=self.device, dtype=torch.float32)
+
+        # LiDARデータがある場合のみ計算
+        if self.lidar_distances is not None:
+            # 前方方向のレイを特定 (全180本のうち、中心から左右30度、合計60度の範囲)
+            # LIDARは-πから+πまでスキャンするので、中心(前方)は90番目のレイ
+            # 90 ± (180rays * 30deg / 180deg) = 90 ± 30 -> インデックス 60 から 120
+            front_rays = self.lidar_distances[:, 60:120]
+            
+            # 前方の最も近い障害物までの距離を取得
+            min_front_distance, _ = torch.min(front_rays, dim=1)
+            
+            # 距離が短いほどペナルティを大きくする (距離が0.3m以下で線形に増加)
+            # 距離が0.3mより遠い場合はペナルティ0
+            # 距離が0mに近づくにつれてペナルティが1に近づく
+            penalty = torch.clamp(1.0 - min_front_distance / 0.3, min=0.0)
+
+        return penalty
+    """
+
     def update_velocity_range(self, current_iteration, max_iteration):
         # カリキュラム学習で速度範囲を段階的に拡大
         # 最小値は0.0、最大値は0.5〜2.0m/sまで線形に増加させる例
