@@ -112,7 +112,8 @@ def get_cfgs():
         "action_scale": 0.25,
         "simulate_action_latency": True,
         "clip_actions": 100.0,
-        "use_lidar": True,
+        "use_lidar": False,
+        "add_obstacles": False,
     }
     obs_cfg = {
         "num_obs": 45,

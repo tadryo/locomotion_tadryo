@@ -54,55 +54,56 @@ class Go2Env:
         # add plain
         self.scene.add_entity(gs.morphs.URDF(file="urdf/plane/plane.urdf", fixed=True))
 
-        # 固定したい障害物の設定をリストで定義
-        # 'type'で形状を、'pos'で[x, y, z]座標を指定
-        self.obstacle_configs = [
-            {'type': 'box',      'pos': [2.5, 1.0, 0.25]},
-            {'type': 'sphere',   'pos': [3.0, -1.5, 0.25]},
-            {'type': 'cylinder', 'pos': [4.0, 0.5, 0.25]},
-            {'type': 'box',      'pos': [4.5, -1.0, 0.25]},
-            {'type': 'sphere',   'pos': [5.5, 1.2, 0.25]},
-            {'type': 'cylinder', 'pos': [6.0, -0.8, 0.25]},
-            {'type': 'box',      'pos': [6.5, 0.0, 0.25]},
-            {'type': 'sphere',   'pos': [7.0, 1.5, 0.25]},
-            {'type': 'cylinder', 'pos': [7.5, -1.2, 0.25]},
-            {'type': 'box',      'pos': [8.0, 0.8, 0.25]},
-        ]
+        if self.env_cfg["add_obstacles"]:
+            # 固定したい障害物の設定をリストで定義
+            # 'type'で形状を、'pos'で[x, y, z]座標を指定
+            self.obstacle_configs = [
+                {'type': 'box',      'pos': [2.5, 1.0, 0.25]},
+                {'type': 'sphere',   'pos': [3.0, -1.5, 0.25]},
+                {'type': 'cylinder', 'pos': [4.0, 0.5, 0.25]},
+                {'type': 'box',      'pos': [4.5, -1.0, 0.25]},
+                {'type': 'sphere',   'pos': [5.5, 1.2, 0.25]},
+                {'type': 'cylinder', 'pos': [6.0, -0.8, 0.25]},
+                {'type': 'box',      'pos': [6.5, 0.0, 0.25]},
+                {'type': 'sphere',   'pos': [7.0, 1.5, 0.25]},
+                {'type': 'cylinder', 'pos': [7.5, -1.2, 0.25]},
+                {'type': 'box',      'pos': [8.0, 0.8, 0.25]},
+            ]
 
-        # リストの長さに基づいて障害物の数を設定
-        self.num_obstacles = len(self.obstacle_configs)
+            # リストの長さに基づいて障害物の数を設定
+            self.num_obstacles = len(self.obstacle_configs)
 
-        self.obstacles = []
-        self.obstacle_positions = []
+            self.obstacles = []
+            self.obstacle_positions = []
 
-        # 定義した設定リストをループして障害物を生成・配置
-        for config in self.obstacle_configs:
-            obstacle_type = config['type']
-            position = config['pos']
+            # 定義した設定リストをループして障害物を生成・配置
+            for config in self.obstacle_configs:
+                obstacle_type = config['type']
+                position = config['pos']
     
-            # 'type'に応じて形状を決定
-            if obstacle_type == 'box':
-                obstacle = self.scene.add_entity(
-                    gs.morphs.Box(size=[0.3, 0.3, 0.5], fixed=True)
-                )
-            elif obstacle_type == 'sphere':
-                obstacle = self.scene.add_entity(
-                    gs.morphs.Sphere(radius=0.2, fixed=True)
-                )
-            elif obstacle_type == 'cylinder':
-                obstacle = self.scene.add_entity(
-                    gs.morphs.Cylinder(radius=0.15, height=0.5, fixed=True)
-                )
-            else:
-                # 未知のタイプが指定された場合はスキップ
-                continue
+                # 'type'に応じて形状を決定
+                if obstacle_type == 'box':
+                    obstacle = self.scene.add_entity(
+                        gs.morphs.Box(size=[0.3, 0.3, 0.5], fixed=True)
+                    )
+                elif obstacle_type == 'sphere':
+                    obstacle = self.scene.add_entity(
+                        gs.morphs.Sphere(radius=0.2, fixed=True)
+                    )
+                elif obstacle_type == 'cylinder':
+                    obstacle = self.scene.add_entity(
+                        gs.morphs.Cylinder(radius=0.15, height=0.5, fixed=True)
+                    )
+                else:
+                    # 未知のタイプが指定された場合はスキップ
+                    continue
 
-            # 固定された位置をTensorに変換
-            pos_tensor = torch.tensor(position, device=gs.device)
+                # 固定された位置をTensorに変換
+                pos_tensor = torch.tensor(position, device=gs.device)
     
-            # 対応するリストに追加
-            self.obstacles.append(obstacle)
-            self.obstacle_positions.append(pos_tensor)
+                # 対応するリストに追加
+                self.obstacles.append(obstacle)
+                self.obstacle_positions.append(pos_tensor)
 
         # add robot
         self.base_init_pos = torch.tensor(self.env_cfg["base_init_pos"], device=gs.device)
@@ -268,10 +269,11 @@ class Go2Env:
         if len(envs_idx) == 0:
             return
 
-        # reset obstacles
-        for env_idx in envs_idx:
-            for obstacle, pos in zip(self.obstacles, self.obstacle_positions):
-                obstacle.set_pos(pos.cpu().numpy(), envs_idx=[env_idx])
+        if self.env_cfg["add_obstacles"]:
+            # reset obstacles
+            for env_idx in envs_idx:
+                for obstacle, pos in zip(self.obstacles, self.obstacle_positions):
+                    obstacle.set_pos(pos.cpu().numpy(), envs_idx=[env_idx])
 
         # reset dofs
         self.dof_pos[envs_idx] = self.default_dof_pos
