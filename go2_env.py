@@ -2,7 +2,7 @@ import torch
 import math
 import genesis as gs
 from genesis.utils.geom import quat_to_xyz, transform_by_quat, inv_quat, transform_quat_by_quat
-
+from lidar import GenesisLidar
 
 def gs_rand_float(lower, upper, shape, device):
     return (upper - lower) * torch.rand(size=shape, device=device) + lower
@@ -119,6 +119,22 @@ class Go2Env:
         # build
         self.scene.build(n_envs=num_envs)
 
+        # LIDARセンサーをインスタンス化
+        # visualizeフラグをshow_viewerと連動させる
+        if show_viewer:
+            self.lidar = GenesisLidar(
+                scene=self.scene,
+                robot=self.robot,
+                obstacle_entities=self.obstacles, # 環境内で定義した障害物リストを渡す
+                num_rays=180,
+                ray_length=1.0,
+                ray_start_angle=-math.pi, # 360度
+                ray_end_angle=math.pi,
+                visualize=True
+            )
+        else:
+            self.lidar = None
+
         # names to indices
         self.motors_dof_idx = [self.robot.get_joint(name).dof_start for name in self.env_cfg["joint_names"]]
 
@@ -171,6 +187,10 @@ class Go2Env:
         self.commands[envs_idx, 2] = gs_rand_float(*self.command_cfg["ang_vel_range"], (len(envs_idx),), gs.device)
 
     def step(self, actions):
+        # LIDARがインスタンス化されていればスキャンを実行
+        if self.lidar is not None:
+            lidar_distances = self.lidar.scan()
+
         self.actions = torch.clip(actions, -self.env_cfg["clip_actions"], self.env_cfg["clip_actions"])
         exec_actions = self.last_actions if self.simulate_action_latency else self.actions
         target_dof_pos = exec_actions * self.env_cfg["action_scale"] + self.default_dof_pos
