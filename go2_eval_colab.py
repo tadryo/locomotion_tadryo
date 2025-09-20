@@ -7,8 +7,6 @@ import torch
 
 from pyvirtualdisplay import Display
 import pyscreenshot as ImageGrab
-from IPython.display import display, clear_output
-import time
 
 try:
     try:
@@ -62,13 +60,12 @@ def main():
 
     obs, _ = env.reset()
     with torch.no_grad():
-        while True:
+        for i in range(1000):
             actions = policy(obs)
             obs, rews, dones, infos = env.step(actions)
             screenshot = ImageGrab.grab()
-            clear_output(wait=True)
-            display(screenshot)
-            time.sleep(0.033)  # 約30FPS
+            screenshot.save(f'images/frame_{i:03d}.png')
+            print(f'Saved frame_{i:03d}.png')
 
 if __name__ == "__main__":
     main()
