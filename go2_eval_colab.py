@@ -27,8 +27,8 @@ from go2_env import Go2Env
 
 
 def main():
-    display = Display(visible=0, size=(1400, 900))
-    display.start()
+    vdisplay = Display(visible=0, size=(1400, 900))
+    vdisplay.start()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--exp_name", type=str, default="go2-walking")
